@@ -6,13 +6,15 @@ package org.zkoss.mongodb.controller;
 import java.text.SimpleDateFormat;
 import java.util.List;
 
+import org.zkoss.mongodb.MongoDBManager;
 import org.zkoss.mongodb.dao.TaskDAO;
 import org.zkoss.mongodb.model.Task;
-import org.zkoss.mongodb.MongoDBManager;
 import org.zkoss.zk.ui.Component;
 import org.zkoss.zk.ui.event.Event;
 import org.zkoss.zk.ui.event.SelectEvent;
-import org.zkoss.zk.ui.util.GenericForwardComposer;
+import org.zkoss.zk.ui.select.SelectorComposer;
+import org.zkoss.zk.ui.select.annotation.Listen;
+import org.zkoss.zk.ui.select.annotation.Wire;
 import org.zkoss.zul.Datebox;
 import org.zkoss.zul.Intbox;
 import org.zkoss.zul.ListModelList;
@@ -26,11 +28,15 @@ import org.zkoss.zul.Textbox;
  * @author Ashish
  *
  */
-public class MongoDBMorphiaDemoCtrl extends GenericForwardComposer {
+public class MongoDBMorphiaDemoCtrl extends SelectorComposer {
 
+	@Wire
 	Listbox tasks;
+	@Wire
 	Textbox name;
+	@Wire
 	Intbox priority;
+	@Wire
 	Datebox date;
 	
 	public void doAfterCompose(Component comp) throws Exception {
@@ -39,25 +45,30 @@ public class MongoDBMorphiaDemoCtrl extends GenericForwardComposer {
 		List<Task> taskList = taskDao.find().asList();
 		tasks.setItemRenderer(new ListitemRenderer() {
 			
-			@Override
-			public void render(Listitem item, Object data) throws Exception {
+			public void render(Listitem item, Object data, int arg2)
+					throws Exception {
+				// TODO Auto-generated method stub
 				Task task = (Task) data;
 				item.setValue(task);
 				new Listcell(task.getName()).setParent(item); 
 				new Listcell("" + task.getPriority()).setParent(item); 
 				new Listcell(new SimpleDateFormat("yyyy-MM-dd").format(task.getExecutionDate())).setParent(item);
+				
 			}
 		});
 		tasks.setModel(new ListModelList(taskList));
 	}
 	
-	public void onSelect$tasks(SelectEvent evt) {
+	@Listen("onSelect=listbox#tasks")
+	public void selectTask(SelectEvent evt) {
 		Task task = (Task) tasks.getSelectedItem().getValue();
 		name.setValue(task.getName());
 		priority.setValue(task.getPriority());
 		date.setValue(task.getExecutionDate());
 	}
-	public void onClick$add(Event evt) {
+	
+	@Listen("onClick=button#add")
+	public void addTask(Event evt) {
 		Task newTask = new Task();
 		newTask.setName(name.getValue());
 		newTask.setPriority(priority.getValue());
@@ -71,7 +82,8 @@ public class MongoDBMorphiaDemoCtrl extends GenericForwardComposer {
 		}
 	}
 	
-	public void onClick$update() {
+	@Listen("onClick=button#update")
+	public void updateTask() {
 		Task task = (Task) tasks.getSelectedItem().getValue();
 		task.setName(name.getValue());
 		task.setPriority(priority.getValue());
@@ -84,8 +96,9 @@ public class MongoDBMorphiaDemoCtrl extends GenericForwardComposer {
 			e.printStackTrace();
 		}
 	}
-	
-	public void onClick$delete() {
+
+	@Listen("onClick=button#delete")
+	public void deleteTask() {
 		Task task = (Task) tasks.getSelectedItem().getValue();
 		try {
 			TaskDAO taskDao = new TaskDAO(MongoDBManager.getMongo(), MongoDBManager.getMorphia());
